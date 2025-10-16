@@ -51,7 +51,6 @@ class Tarefa:
         self.excluida = str(False)
 
     def __str__(self):
-        # evita usar formatação direta com especificador sobre objetos
         categoria_str = getattr(self.categoria, "nome", str(self.categoria))
         projeto_str = getattr(self.projeto, "nome", str(self.projeto))
         responsavel_str = getattr(self.responsavel, "nome", str(self.responsavel))
@@ -71,5 +70,6 @@ class Tarefa:
             f"|{'Excluída: ' + self.excluida:<50}|\n"
             f"{'=' * 52}\n"
         )
+
 
 
