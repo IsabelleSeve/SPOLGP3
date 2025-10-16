@@ -27,9 +27,9 @@ class Categoria:
         return f"ID: {self.id:^3}, Categoria: {self.nome:^10}"
 
 class Status(Enum):
-    PENDENTE = "Pendente"
-    EM_ANDAMENTO = "Em Andamento"
-    CONCLUIDA = "Concluída"
+    A_FAZER = "A fazer"
+    FAZENDO = "Fazendo"
+    FEITO = "Feito"
 
 class Prioridade(Enum):
     BAIXA = "Baixa"
@@ -38,7 +38,7 @@ class Prioridade(Enum):
 
 class Tarefa:
     def __init__(self, id, titulo, descricao, projeto, responsavel, categoria, prioridade, status, criacao, prazo ):
-        self.id = id
+        self.id = str(id)
         self.titulo = titulo
         self.descricao = descricao
         self.projeto = projeto
@@ -46,14 +46,30 @@ class Tarefa:
         self.categoria = categoria
         self.prioridade = prioridade
         self.status = status
-        self.criacao = criacao
-        self.prazo = prazo
+        self.criacao = str(criacao)
+        self.prazo = str(prazo)
+        self.excluida = str(False)
 
     def __str__(self):
-        return f"""
-            Tarefa ID {self.id:^3}: Título: {self.titulo:^10} | Projeto: {self.projeto.nome:^17} |\n
-            Responsável: {self.responsavel.nome} | Status: {self.status:^15} | Categoria: {self.categoria:^10}| \m
-            Prioridade: {self.prioridade:^15} | Prazo: {self.prazo:^15}
-        """
+        # evita usar formatação direta com especificador sobre objetos
+        categoria_str = getattr(self.categoria, "nome", str(self.categoria))
+        projeto_str = getattr(self.projeto, "nome", str(self.projeto))
+        responsavel_str = getattr(self.responsavel, "nome", str(self.responsavel))
+
+        return (
+            f"{'='*50}\n"
+            f"|{'Tarefa ' + self.id:<50}|\n"
+            f"|{'Título: ' + self.titulo:<50}|\n"
+            f"|{'Descrição: ' + self.descricao:<50}|\n"
+            f"|{'Projeto: ' + projeto_str:<50}|\n"
+            f"|{'Responsável: ' + responsavel_str:<50}|\n"
+            f"|{'Categoria: ' + categoria_str:<50}|\n"
+            f"|{'Prioridade: ' + self.prioridade:<50}|\n"
+            f"|{'Status: ' + self.status:<50}|\n"
+            f"|{'Criada em: ' + self.criacao:<50}|\n"
+            f"|{'Prazo: ' + self.prazo:<50}|\n"
+            f"|{'Excluída: ' + self.excluida:<50}|\n"
+            f"{'=' * 52}\n"
+        )
 
 

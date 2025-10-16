@@ -1,12 +1,20 @@
 from os.path import join
 from classes import Usuario, Projeto, Categoria, Status, Tarefa, Prioridade
 from datetime import datetime
-
+import mysql.connector
 
 usuarios = []
 projetos = []
 categorias = []
 tarefas = []
+
+def conectar():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="gerenciamento_db"
+    )
 
 def inserirValorObrigatio(prompt):
     while True:
@@ -42,14 +50,15 @@ def mostrarUsuarios():
 def editarUsuario():
     mostrarUsuarios()
     try:
-        id = int(input("Digite o id do usuario que deseja editar: "))
         if (len(usuarios) == 0):
-            print("Não há usuários cadastrados")
+            print("Cadastre um novo usuãrio...")
+            criarUsuario()
 
         else:
+            id = int(input("Digite o id do usuario que deseja editar: "))
             for usuario in usuarios:
                 if usuario.id == id:
-                    novoNome = input("Digite o novo nome do usuario : ") or usuario.nome
+                    novoNome = inserirValorObrigatio("Digite o novo nome do usuario : ") or usuario.nome
                     novoEmail = input("Digite o novo email do usuario: ") or usuario.email
 
                     usuario.nome = novoNome
@@ -78,7 +87,7 @@ def mostrarCategoria():
     if (len(categorias) == 0):
         print("Nenhuma cadastrada!")
         return
-    print(f"{'Exibindo categorias':=^20}")
+    print(f"{'Exibindo categorias':=^25}")
     for categoria in categorias:
         print(categoria)
 
@@ -100,7 +109,7 @@ def editarCategoria():
         print("Digite uma informação válida!")
 
 
-# CRIANDO CRUD PARA PROJETO -- SIMPLIFICADO
+# CRIANDO CRUD PARA PROJETO
 # CREATE
 def criarProjeto():
     id = len(projetos)+1
@@ -135,12 +144,12 @@ def editarProjeto():
                 projeto.descricao = novaDescricao
 
                 print("Projeto atualizado com sucesso!")
-                return
-        print("Digite um id de projeto presente na lista!")
+        return
     except ValueError:
-        print("Digite uma informação válida!")
+        print("A informação digitada é inválida! Crie um novo. ")
+        return criarProjeto()
 
-# CRIANDO CRUD PARA TAREFA -- SIMPLIFICADO
+# CRIANDO CRUD PARA TAREFA
 # CREATE
 def criarTarefa():
     id = len(tarefas)+1
@@ -156,7 +165,7 @@ def criarTarefa():
 
     # Escolhendo quem ficará responsável pela tarefa
     print(f'{"Associando Tarefa a um Responsável":=^50}')
-    print(f"|{'Usuários':^50}|")
+    print(f"|{'Usuários':^48}|")
     print(mostrarUsuarios())
 
     #Caso nao tenha usuarios cadastrados
@@ -164,17 +173,23 @@ def criarTarefa():
         print("Crie um novo!")
         responsavel = criarUsuario()
     else:
-        responsavelId = int(input("Digite o ID do Responsável da tarefa: "))
-        responsavel = next((u for u in usuarios if u.id == responsavelId), None)
-
+        while True:
+            try:
+                responsavelId = int(input("Digite o ID do Responsável da tarefa: "))
+                responsavel = next((u for u in usuarios if u.id == responsavelId), None)
+                if responsavel:
+                    break
+                else:
+                    print("ID inválido! Digite apenas o ID de um usuário existente.")
+            except ValueError:
+                print("Por favor, digite apenas números.")
         if not responsavel:
-            print("Digite apenas o ID de um usuário existente!")
-            reponsavel = criarUsuario()
+            responsavel = criarUsuario()
 
 
     #Escolhendo a categoria para a tarefa
     print(f'{"Associando Tarefa a uma Categoria":=^50}')
-    print(f"|{'Categorias':<40}|")
+    print(f"|{'Categorias':<48}|")
     print(mostrarCategoria())
 
     #Caso nao tenha Categorias cadastradas
@@ -186,12 +201,20 @@ def criarTarefa():
         categoria = next((c for c in categorias if c.id == categoria_id), None)
 
         if not categoria:
-            print("Categoria não encontrada! Crie uma nova categoria!.")
-            categoria = criarCategoria()
+            while True:
+                try:
+                    categoria_id = int(input("Digite o ID da categoria: "))
+                    categoria = next((c for c in categorias if c.id == categoria_id), None)
+                    if categoria:
+                        break
+                    else:
+                        print("Categoria não encontrada! Tente novamente.")
+                except ValueError:
+                    print("Por favor, digite apenas números.")
 
     # Escolhendo o projeto que ele vai fazer parte
-    print(f"\n{'Associando Tarefa a uma Projeto':=^50}")
-    print(f"|{'Projetos':<40}|")
+    print(f"\n{' Associando Tarefa a uma Projeto ':=^60}")
+    print(f"|{'Projetos':<58}|")
     print(mostrarProjeto())
 
     #Caso nao tenha Projetos cadastrados
@@ -199,22 +222,29 @@ def criarTarefa():
         print("Nenhuma projeto cadastrado, crie um novo!")
         projeto = criarProjeto()
     else:
-        projeto_id = int(input("Digite o ID da categoria: "))
-        projeto = next((c for c in projetos if c.id == projeto_id), None)
-
-        if not projeto:
-            print("Projeto não encontrado! Crie um novo.")
-            projeto = criarProjeto()
+        while True:
+            try:
+                projeto_id = int(input("Digite o ID do projeto: "))
+                projeto = next((p for p in projetos if p.id == projeto_id), None)
+                if projeto:
+                    break
+                else:
+                    print("Projeto não encontrado! Tente novamente.")
+            except ValueError:
+                print("Por favor, digite apenas números.")
 
     #Definindo Prioridade e Status
     prioridade = input("Digite a prioridade da tarefa (baixa/média/alta): ").capitalize()
-    status = input("Digite o status inicial da tarefa (ex: Pendente, Em andamento, Concluída): ").capitalize()
+    status = input("Digite o status inicial da tarefa \n(ex: A fazer, Fazendo, Feito): ").capitalize()
 
     # Criar o objeto tarefa
     nova_tarefa = Tarefa(id, titulo, descricao, projeto, responsavel, categoria, prioridade, status, criacao, prazo)
     tarefas.append(nova_tarefa)
-    print("\nTarefa criada com sucesso!")
+
+    print(f"\n{'=' * 52}")
+    print(f"|{'Tarefa criada com sucesso!':^50}|")
     print(nova_tarefa)
+    return
 
 # READ
 def mostrarTarefa():
@@ -309,7 +339,7 @@ def editarTarefa():
     print(f"{'Exibindo Projeto':=^25}")
     mostrarProjeto()
 
-    novoProjetoId = int(input("Digite o ID do Projeto para a Tarefa: ")).upper()
+    novoProjetoId = int(input("Digite o ID do Projeto para a Tarefa: "))
 
     if novoProjetoId:
         try:
@@ -326,49 +356,184 @@ def editarTarefa():
     print("\n" + "=" * 60)
     print("✨ Tarefa atualizada com sucesso!")
 
-# DELETANDO ENTIDADES (CRIAR VALIDADORES)
+# DELETANDO ENTIDADES
+# Funções construídas com auxílio de inteligência artificial
 # DELETE USUÁRIO
 def apagarUsuario():
     mostrarUsuarios()
+
+    #caso não exista nenhum usuário cadastrado
+    if not usuarios:
+        print("Nenhum usuário cadastrado!")
+        return
+
     try:
-        id = int(input("Digite o id do usuario que deseja apagar: "))
-        for usuario in usuarios:
-            if usuario.id == id:
-                usuario.remove(usuario)
-                print("Usuario apagado com sucesso!")
-                return
-            print("Digite um id de usuario presente na lista!")
+        id = int(input("Digite o ID do usuário que deseja apagar: "))
+        usuario = next((u for u in usuarios if u.id == id), None)
+
+        if not usuario:
+            print("Usuário não encontrado!")
+            return
+
+        #verifica se tem tarefas associadas
+        tarefas_associadas = [t for t in tarefas if t.responsavel.id == usuario.id]
+        if tarefas_associadas:
+            print("Não é possível excluir este usuário, porque ele está associado a alguma tarefa!")
+            return
+
+        usuarios.remove(usuario)
+        print("Usuário apagado com sucesso!")
     except ValueError:
-        print("Digite um número válido!")
+        print("Digite uma informação válida!")
 
 # DELETE CATEGORIA
 def apagarCategoria():
     mostrarCategoria()
+
+    #caso não exista nenhuma categoria cadastrada
+    if not categorias:
+        print("Nenhuma categoria cadastrada!")
+        return
+
     try:
-        print("Não apagar categorias que estejam associadas a Tarefas e Projetos!")
-        id = int(input("Digite o id da categoria que deseja apagar:"))
-        for categoria in categorias:
-            if categoria.id == id:
-                categoria.remove(categorias)
-                print("Categoria apagada com sucesso!")
-                return
-        print("Digite um id de categoria presente na lista!")
+        id = int(input("Digite o ID da categoria que deseja apagar: "))
+        categoria = next((c for c in categorias if c.id == id), None)
+
+        if not categoria:
+            print("Categoria não encontrada!")
+            return
+
+        # verifica se existe tarefas associadas
+        tarefas_associadas = [t for t in tarefas if t.categoria.id == categoria.id]
+        if tarefas_associadas:
+            print("Não é possível excluir esta categoria, porque ela está associada a alguma tarefa!")
+            return
+
+        categorias.remove(categoria)
+        print("Categoria apagada com sucesso!")
     except ValueError:
-        print("Digite uma informação válida")
+        print("Digite uma informação válida!")
 
 # DELETE PROJETO
 def apagarProjeto():
     mostrarProjeto()
+
+    #caso não exista nenhum projeto cadastrado
+    if not projetos:
+        print("Nenhum projeto cadastrado!")
+        return
+
     try:
-        id = int(input("Digite o id do projeto: "))
-        for projeto in projetos:
-            if projeto.id == id:
-                projetos.remove(projeto)
-                print("Projeto apagado com sucesso!")
-                return
-        print("Digite um id de projeto presente na lista!")
+        id = int(input("Digite o ID do projeto que deseja apagar: "))
+        projeto = next((p for p in projetos if p.id == id), None)
+
+        if not projeto:
+            print("Projeto não encontrado!")
+            return
+
+        # verifica se existe tarefas associadas
+        tarefas_associadas = [t for t in tarefas if t.projeto.id == projeto.id]
+        if tarefas_associadas:
+            print("Não é possível excluir este projeto, porque ele está associado a alguma tarefa!")
+            return
+
+        projetos.remove(projeto)
+        print("Projeto apagado com sucesso!")
     except ValueError:
         print("Digite uma informação válida!")
+
+#DELETE TAREFA
+def apagarTarefa():
+    mostrarTarefa()
+
+    try:
+        id = int(input("Digite o ID da tarefa que deseja apagar: "))
+        tarefa = next((t for t in tarefas if t.id == str(id)), None)
+
+        #caso não exista nenhum tarefa cadastrada
+        if not tarefa:
+            print("Tarefa não encontrada!")
+            return
+
+        tarefas.excluida = True
+        print("Tarefa apagada com sucesso!")
+    except ValueError:
+        print("Digite uma informação válida!")
+
+
+#CRIANDO RELATÓRIO (DEUS ME AJUDE)
+def relatorio():
+    print(f"="*60)
+    print(f"{' RELATÓRIO ':=^60}")
+    print(f"=" * 60)
+
+    todasTarefas = tarefas
+
+    if not todasTarefas:
+        print(f"| {'Nenhuma tarefa cadastrada!':^56} |")
+        print(f"=" * 60)
+
+        return
+
+    # SEPARANDO AS TAREFAS PELOS STATUS 'A FAZER', 'FAZENDO', 'FEITO'
+    print(f"|{' Tarefas por Status ':=^58}|")
+    print(f"=" * 60)
+
+    status_dict = {"A FAZER": [], "FAZENDO": [], "FEITO": []}
+    for t in todasTarefas:
+        status = t.status.upper()
+        if status in status_dict:
+            status_dict[status].append(t)
+
+    for status, lista in status_dict.items():
+        print(f"\n{status}: {len(lista)} tarefas")
+        for t in lista:
+            flag = " (excluída)" if t.excluida else ""
+            print(f"   - {t.titulo}{flag}")
+
+    # Tarefas vencidas
+    print("\nTarefas Vencidas (prazo anterior a hoje)")
+    hoje = datetime.now()
+    vencidas = []
+    for t in todasTarefas:
+        try:
+            prazo = datetime.strptime(t.prazo, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            try:
+                prazo = datetime.strptime(t.prazo, "%Y-%m-%d %H:%M")
+            except:
+                continue
+        if prazo < hoje:
+            vencidas.append(t)
+
+    if vencidas:
+        for t in vencidas:
+            flag = " (excluída)" if t.excluida else ""
+            print(f"   - {t.titulo} | Prazo: {t.prazo}{flag}")
+    else:
+        print("   Nenhuma tarefa vencida.")
+
+    # Tarefas por Projeto
+    print("\nTarefas por Projeto")
+    projetos_dict = {}
+    for t in todasTarefas:
+        nome_projeto = t.projeto.nome
+        projetos_dict[nome_projeto] = projetos_dict.get(nome_projeto, 0) + 1
+
+    for nome, qtd in projetos_dict.items():
+        print(f"   - {nome}: {qtd} tarefa(s)")
+
+    # Tarefas por Usuário
+    print("\nTarefas por Usuário (responsável)")
+    usuarios_dict = {}
+    for t in todasTarefas:
+        nome_usuario = t.responsavel.nome
+        usuarios_dict[nome_usuario] = usuarios_dict.get(nome_usuario, 0) + 1
+
+    for nome, qtd in usuarios_dict.items():
+        print(f"   - {nome}: {qtd} tarefa(s)")
+
+    print("\n" + "=" * 60)
 
 # Criando Catálogo de opções
 def catalogo():
@@ -380,6 +545,7 @@ def catalogo():
         print(f'|{" 2 - Gerenciamento de Categorias":<38}|')
         print(f'|{" 3 - Gerenciamento de Projetos":<38}|')
         print(f'|{" 4 - Gerenciamento de Tarefas":<38}|')
+        print(f'|{" 5 - Relatório":<38}|')
         print(f'|{" 0 - Sair":<38}|')
         print(f'-'*40)
 
@@ -391,7 +557,7 @@ def catalogo():
 
 
         # Criando as respostas para o Catálogo
-        # CRUD DO USUARIO
+        # CRUD DO USUÁRIO
         if resposta == 1:
             print(f'=' * 40)
             print(f'|{" Gerenciamento de Usuários ":=^38}|')
@@ -498,6 +664,9 @@ def catalogo():
             elif resp4 == 4:
                 apagarTarefa()
 
+        elif resposta == 5:
+            relatorio()
+
         elif resposta == 0:
             print("encerando...")
             break
@@ -508,4 +677,3 @@ def catalogo():
 
 if __name__ == "__main__":
     catalogo()
-
