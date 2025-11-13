@@ -111,13 +111,13 @@ INSERT INTO Professores (id_usuario, matricula_professor, formacao) VALUES
 (3, 'P2025001', 'Licenciatura em Matemática'),
 (4, 'P2025002', 'Licenciatura em Letras');
 
--- TABELA: Professores_Materias (relação professor → matéria)
+-- TABELA: Professores_Materias
 INSERT INTO Professores_Materias (id_professor, id_materia) VALUES
 (1, 1), -- Pedro ensina Matemática
 (1, 4), -- Pedro ensina Física
 (2, 2); -- Ana ensina Português
 
--- TABELA: Turmas_Materias (relação turma → matéria)
+-- TABELA: Turmas_Materias 
 INSERT INTO Turmas_Materias (id_turma, id_materia) VALUES
 (1, 1), -- 1º Ano A → Matemática
 (1, 2), -- 1º Ano A → Português
