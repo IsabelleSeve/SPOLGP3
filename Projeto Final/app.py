@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from flask import Flask
 import re
 
+
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
 app = Flask(__name__)
@@ -82,14 +83,15 @@ def verificar_forca_senha(senha):
 # CRUD USUARIO
 # CREATE
 def criar_usuario():
-    print(f"\n {' Criar Usuário ':-^50} ")
+    print(f"\n{' Criar Usuário ':-^50}")
     nome = input("Nome: ").strip()
     email = input("Email: ").strip()
     cpf = input("CPF (opcional): ").strip() or None
     tipo = input("Tipo (aluno/professor/coordenador/administrador): ").strip().lower()
     if tipo not in ('aluno','professor','coordenador','administrador'):
-        print("Tipo inválido. Você será cadastrado como aluno.")
+        print("Tipo inválido. O usuário será cadastrado como aluno.")
         tipo = 'aluno'
+
     while True:
         senha = input("Senha: ").strip()
         if verificar_forca_senha(senha):
@@ -97,7 +99,7 @@ def criar_usuario():
 
     hash_senha = gerar_hash_senha(senha)
     ativo = 1
-    conn = None
+
     try:
         conn = criar_conexao()
         cursor = conn.cursor()
@@ -105,28 +107,51 @@ def criar_usuario():
                "VALUES (%s, %s, %s, %s, %s, %s)")
         cursor.execute(sql, (nome, email, cpf, hash_senha, tipo, ativo))
         conn.commit()
-        print("Usuário criado com id:", cursor.lastrowid)
+        print("Usuário criado com ID:", cursor.lastrowid)
     except mysql.connector.Error as err:
         print("Erro ao criar usuário:", err)
     finally:
         if conn:
             conn.close()
 
-# READE
+
+# READ
 def listar_usuarios():
+    conn = None
     try:
         conn = criar_conexao()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT id_usuario, nome, email, cpf, tipo_usuario, ativo FROM Usuarios")
         rows = cursor.fetchall()
-        print(f"\n {'Criar Usuário':^-60} ")
+
+        if not rows:
+            print("\nNenhum usuário cadastrado.")
+            return []
+
+        print(f"\n{' Lista de Usuários ':-^90}")
+        print(f"{'ID':<6} {'Nome':<25} {'Email':<35} {'Tipo':<15} {'Ativo':<6}")
+        print('-' * 90)
+
         for r in rows:
-            print(f"ID:{r[0]:<3} Nome:{r[1]:<20} Email:{r[2]:<30} Tipo:{r[4]:<12} Ativo:{bool(r[5])}")
+            idu = r.get('id_usuario')
+            nome = r.get('nome') or ''
+            email = r.get('email') or ''
+            tipo = r.get('tipo_usuario') or ''
+            ativo = bool(r.get('ativo'))
+            print(f"{str(idu):<6} {nome:<25} {email:<35} {tipo:<15} {str(ativo):<6}")
+
+        return rows
+
+    except mysql.connector.Error as err:
+        print("Erro ao listar usuários (MySQL):", err)
+        return []
     except Exception as e:
         print("Erro ao listar usuários:", e)
+        return []
     finally:
         if conn:
             conn.close()
+
 
 # UPDATE
 def editar_usuario():
@@ -201,34 +226,48 @@ def remover_usuario():
             conn.close()
 
 def autenticar():
-    print("\n--- Login ---")
+    print(f"\n{' Login ':-^50}")
     email = input("Email: ").strip()
     senha = input("Senha: ").strip()
+
     try:
         conn = criar_conexao()
         cursor = conn.cursor()
-        cursor.execute("SELECT id_usuario, nome, email, senha, tipo_usuario, ativo FROM Usuarios WHERE email=%s", (email, senha))
+        cursor.execute(
+            "SELECT id_usuario, nome, email, senha, tipo_usuario, ativo FROM Usuarios WHERE email=%s",
+            (email,)
+        )
         row = cursor.fetchone()
+
         if not row:
-            print("Informações inválidas.")
+            print("Email não encontrado.")
             return None
+
         id_usuario, nome, email_db, hash_armazenado, tipo_usuario, ativo = row
+
         if not ativo:
             print("Usuário inativo.")
             return None
+
+        if isinstance(hash_armazenado, bytes):
+            hash_armazenado = hash_armazenado.decode('utf-8')
+        hash_armazenado = hash_armazenado.strip()
+
         if checar_senha(senha, hash_armazenado):
             print(f"Autenticado como {nome} ({tipo_usuario})")
-            # retornar um dicionário simples com dados do usuário
             return {"id_usuario": id_usuario, "nome": nome, "email": email_db, "tipo": tipo_usuario}
         else:
-            print("Informações inválidas.")
+            print("Senha incorreta.")
             return None
+
     except Exception as e:
         print("Erro ao autenticar:", e)
         return None
+
     finally:
         if conn:
             conn.close()
+
 
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -257,7 +296,6 @@ def lancar_ou_atualizar_nota():
     except ValueError:
         print("IDs devem ser números inteiros.")
         return
-    # procurar se já existe nota para esse aluno+materia
     try:
         conn = criar_conexao()
         cursor = conn.cursor()
@@ -376,7 +414,6 @@ def grafico_media_por_aluno():
     for r in rows:
         id_aluno = r[1]
         nota_final = r[8]
-        # se nota_final for None, tentar calcular com as colunas
         if nota_final is None:
             n1, n2, n3, rec = r[4], r[5], r[6], r[7]
             nota_final = calcular_media_simples(n1, n2, n3, rec) or 0.0
